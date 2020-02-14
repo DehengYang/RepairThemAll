@@ -28,15 +28,18 @@ class Bug(object):
             self.project_data = json.load(fd)
             return self.project_data
 
+    # check out buggy version
     def checkout(self, working_directory):
         self.working_directory  = os.path.realpath(working_directory)
 
         self.benchmark.checkout(self, self.working_directory)
         pass
 
+    # compile project
     def compile(self):
         return self.benchmark.compile(self, self.working_directory)
 
+    # run test cases
     def run_test(self):
         return self.benchmark.run_test(self, self.working_directory)
 

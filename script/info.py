@@ -14,11 +14,14 @@ parser.add_argument("--id", "-i", help="The bug id")
 
 if __name__ == "__main__":
     args = parser.parse_args()
+    # get all bugs in the target benchmark
     args.benchmark = get_benchmark(args.benchmark)
 
+    # if id is given
     if args.id is not None:
         bug = args.benchmark.get_bug(args.id)
 
+        # u'/mnt/workingDir/Defects4J_Mockito_35'
         bug_path = os.path.join(WORKING_DIRECTORY,
                                     "%s_%s_%s" % (bug.benchmark.name, bug.project, bug.bug_id))
         bug.checkout(bug_path)

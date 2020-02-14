@@ -60,6 +60,11 @@ class Defects4J(Benchmark):
         return os.path.join(self.path, "framework", "bin")
 
     def checkout(self, bug, working_directory):
+        # u'export PATH="/home/apr/env/jdk1.7.0_80/bin/
+        # :/mnt/recursive-repairthemall/RepairThemAll/script/../benchmarks/defects4j/framework/bin
+        # :$PATH";
+        # export JAVA_HOME="/home/apr/env/jdk1.7.0_80/bin/..";
+        # \ndefects4j checkout -p Mockito -v 35b -w /mnt/workingDir/Defects4J_Mockito_35;\n'
         cmd = """export PATH="%s:%s:$PATH";export JAVA_HOME="%s";
 defects4j checkout -p %s -v %sb -w %s;
 """ % (JAVA7_HOME,

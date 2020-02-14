@@ -64,7 +64,7 @@ class Bears(Benchmark):
 
     def _get_project_info(self, bug):
         try:
-            return bug.maven_info
+            return bug.maven_info # seems bug does not conatin maven_info tag, at least for Bears
         except AttributeError:
             pass
         local_working_directory = bug.working_directory
@@ -75,6 +75,13 @@ class Bears(Benchmark):
         pom_path = pom_path.replace("/", "", 1)
         if pom_path:
         	local_working_directory = os.path.join(local_working_directory, pom_path)        
+        # u'cd /mnt/workingDir/Bears_webfirmframework-wff_453188520-453188718/wffweb;
+        # \nmvn com.github.tdurieux:project-config-maven-plugin:1.0-SNAPSHOT:info -q;\n'
+        
+        # error occurs when executing mvn:
+        # 1) need to configure maven download repo (~/env/maven/conf/settings.xml)
+        # 2) run `mvn org.apache.maven.plugins:maven-dependency-plugin:3.0.0:get -DremoteRepositories=https://durieux.me/maven-repository/snapshots/ -Dartifact=com.github.tdurieux:project-config-maven-plugin:1.0-SNAPSHOT -U`
+        # refer to [Why my init step fails?](https://github.com/program-repair/RepairThemAll/issues/3)
         cmd = """cd %s;
 mvn com.github.tdurieux:project-config-maven-plugin:1.0-SNAPSHOT:info -q;
 """ % (local_working_directory)
@@ -82,12 +89,19 @@ mvn com.github.tdurieux:project-config-maven-plugin:1.0-SNAPSHOT:info -q;
         bug.maven_info = info
         return info
 
+    # checkout buggy version
     def checkout(self, bug, working_directory):
+        # branch id: u'webfirmframework-wff-453188520-453188718'
         branch_id = "%s-%s" % (bug.project, bug.bug_id)
 
+        # cmd: u'cd /mnt/recursive-repairthemall/RepairThemAll/script/../benchmarks/bears; 
+        # git reset .; git checkout -- .; git clean -x -d --force; git checkout -f master; 
+        # git checkout -f webfirmframework-wff-453188520-453188718'
         cmd = "cd " + self.path + "; git reset .; git checkout -- .; git clean -x -d --force; git checkout -f master; git checkout -f " + branch_id
         subprocess.call(cmd, shell=True, stdout=FNULL, stderr=subprocess.STDOUT)
 
+        # '/mnt/recursive-repairthemall/RepairThemAll/script/../benchmarks/bears/bears.json'
+        # at this time, the benchmarks/bears/ are changed into bug-id version
         bears_info_path = os.path.join(self.path, "bears.json")
         with open(bears_info_path) as fd:
             bug.info = json.load(fd)
@@ -95,9 +109,13 @@ mvn com.github.tdurieux:project-config-maven-plugin:1.0-SNAPSHOT:info -q;
         cmd = "cd " + self.path + "; git log --format=format:%H --grep='Changes in the tests'"
         bug_commit = subprocess.check_output(cmd, shell=True)
         if len(bug_commit) == 0:
+            # if no bug_commit, then choose bug commit ID with message containing "Bug commit"
             cmd = "cd " + self.path + "; git log --format=format:%H --grep='Bug commit'"
             bug_commit = subprocess.check_output(cmd, shell=True)
 
+        # u'cd /mnt/recursive-repairthemall/RepairThemAll/script/../benchmarks/bears;
+        # \ngit checkout -f b0706752ab6c822c6ab9758eb6cae8923b49e700;
+        # \ncp -r . /mnt/workingDir/Bears_webfirmframework-wff_453188520-453188718'
         cmd = """cd %s;
 git checkout -f %s;
 cp -r . %s""" % (
@@ -109,14 +127,31 @@ cp -r . %s""" % (
         pass
 
     def compile(self, bug, working_directory):
+        # u'/mnt/workingDir/Bears_webfirmframework-wff_453188520-453188718'
         local_working_directory = working_directory
+        # original pom path: u'./workspace/webfirmframework/wff/453188520/wffweb/pom.xml'
         pom_path = bug.info['reproductionBuggyBuild']['projectRootPomPath']
-        buggy_build_id = bug.info['builds']['buggyBuild']['id']
+        buggy_build_id = bug.info['builds']['buggyBuild']['id'] #453188520
+        # u'/wffweb/pom.xml'
         pom_path = pom_path.partition(str(buggy_build_id))[2]
         pom_path = pom_path.replace("/pom.xml", "")
-        pom_path = pom_path.replace("/", "", 1)
+        pom_path = pom_path.replace("/", "", 1) #u'wffweb
         if pom_path:
-        	local_working_directory = os.path.join(local_working_directory, pom_path)        
+            # u'/mnt/workingDir/Bears_webfirmframework-wff_453188520-453188718/wffweb'
+        	local_working_directory = os.path.join(local_working_directory, pom_path)  # obtain pom.xml path. u'/mnt/workingDir/Bears_webfirmframework-wff_453188520-453188718/wffweb'        
+        # u'cd /mnt/workingDir/Bears_webfirmframework-wff_453188520-453188718/wffweb;
+        # \nexport _JAVA_OPTIONS=-Djdk.net.URLClassPath.disableClassPathURLCheck=true;
+        # \nmvn -Dhttps.protocols=TLSv1.2 install -V -B -DskipTests -Denforcer.skip=true 
+        # -Dcheckstyle.skip=true -Dcobertura.skip=true -DskipITs=true -Drat.skip=true 
+        # -Dlicense.skip=true -Dfindbugs.skip=true -Dgpg.skip=true -Dskip.npm=true 
+        # -Dskip.gulp=true -Dskip.bower=true; 
+        # \nmvn -Dhttps.protocols=TLSv1.2 test -DskipTests -V -B -Denforcer.skip=true 
+        # -Dcheckstyle.skip=true -Dcobertura.skip=true -DskipITs=true 
+        # -Drat.skip=true -Dlicense.skip=true -Dfindbugs.skip=true -Dgpg.skip=true 
+        # -Dskip.npm=true -Dskip.gulp=true -Dskip.bower=true -Denforcer.skip=true;
+        # \nmvn dependency:build-classpath -Dmdep.outputFile="classpath.info";\n'
+
+        # 1) mvn install; 2) mvn test; 3) mvn dependency
         cmd = """cd %s;
 export _JAVA_OPTIONS=-Djdk.net.URLClassPath.disableClassPathURLCheck=true;
 mvn -Dhttps.protocols=TLSv1.2 install -V -B -DskipTests -Denforcer.skip=true -Dcheckstyle.skip=true -Dcobertura.skip=true -DskipITs=true -Drat.skip=true -Dlicense.skip=true -Dfindbugs.skip=true -Dgpg.skip=true -Dskip.npm=true -Dskip.gulp=true -Dskip.bower=true; 
@@ -132,9 +167,18 @@ mvn dependency:build-classpath -Dmdep.outputFile="classpath.info";
         buggy_build_id = bug.info['builds']['buggyBuild']['id']
         pom_path = pom_path.partition(str(buggy_build_id))[2]
         pom_path = pom_path.replace("/pom.xml", "")
-        pom_path = pom_path.replace("/", "", 1)
+        pom_path = pom_path.replace("/", "", 1) # u'wffweb'
         if pom_path:
         	local_working_directory = os.path.join(local_working_directory, pom_path)
+        # cmd:
+        # u"cd /mnt/workingDir/Bears_webfirmframework-wff_453188520-453188718/wffweb;
+        # \nexport _JAVA_OPTIONS=-Djdk.net.URLClassPath.disableClassPathURLCheck=true; 
+        # \nrm -rf .git; git init; git commit -m 'init' --allow-empty;
+        # \nmvn test -V -B -Denforcer.skip=true -Dcheckstyle.skip=true 
+        # -Dcobertura.skip=true -DskipITs=true -Drat.skip=true -Dlicense.skip=true 
+        # -Dfindbugs.skip=true -Dgpg.skip=true -Dskip.npm=true -Dskip.gulp=true 
+        # -Dskip.bower=true -Djacoco.skip=true -Denforcer.skip=true\n"
+        # 1) rm .git and init commit; 2) mvn test
         cmd = """cd %s;
 export _JAVA_OPTIONS=-Djdk.net.URLClassPath.disableClassPathURLCheck=true;  
 rm -rf .git; git init; git commit -m 'init' --allow-empty;
