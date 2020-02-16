@@ -14,6 +14,9 @@ parser.add_argument("--benchmark", "-b", required=True, default="Defects4J",
 parser.add_argument("--id", "-i", help="The bug id")
 
 if __name__ == "__main__":
+    '''
+    This is to write basic information of a benchmark bug into json 
+    '''
     # receive parameters
     args = parser.parse_args()
     cmd = "mkdir %s" % os.path.join(WORKING_DIRECTORY, 'testResults')

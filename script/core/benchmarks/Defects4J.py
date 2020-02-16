@@ -101,6 +101,11 @@ defects4j test;
         pass
 
     def failing_tests(self, bug):
+        # u'export PATH="/home/apr/env/jdk1.7.0_80/bin/:
+        # /mnt/recursive-repairthemall/RepairThemAll/script/../benchmarks/defects4j/framework/bin:$PATH";
+        # export JAVA_HOME="/home/apr/env/jdk1.7.0_80/bin/..";
+        # \nexport _JAVA_OPTIONS=-Djdk.net.URLClassPath.disableClassPathURLCheck=true;
+        # \ndefects4j info -p Mockito -b 35;\n'
         cmd = """export PATH="%s:%s:$PATH";export JAVA_HOME="%s";
 export _JAVA_OPTIONS=-Djdk.net.URLClassPath.disableClassPathURLCheck=true;
 defects4j info -p %s -b %s;
@@ -111,6 +116,8 @@ defects4j info -p %s -b %s;
        bug.bug_id)
         info = subprocess.check_output(cmd, shell=True, stderr=FNULL)
 
+        # filter test cases in same test.java, e.g., Mockito 35 has 4 failed cases, 
+        # but only 1 failing test
         tests = Set()
         reg = re.compile('- (.*)::(.*)')
         m = reg.findall(info)
@@ -167,6 +174,7 @@ defects4j info -p %s -b %s;
 
         sources = self.project_data[bug.project]["classpath"]
         sources = collections.OrderedDict(sorted(sources.items(), key=lambda t: int(t[0])))
+        # add classpath in buggy dir, e.g., target/ in Mokcito-35
         for index, cp in sources.iteritems():
             if bug.bug_id <= int(index):
                 for c in cp.split(":"):

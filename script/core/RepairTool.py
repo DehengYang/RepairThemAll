@@ -47,11 +47,13 @@ class RepairTool(object):
         pass
 
     def parseData(self):
+        # '/mnt/recursive-repairthemall/RepairThemAll/script/../data/repair_tools/arja.json'
         path = os.path.join(DATA_PATH, 'repair_tools', self.config_name + '.json')
         if os.path.exists(path):
             with open(path) as data_file:
                 self.data = json.load(data_file)
                 self.main = self.data["main"]
+                # u'/mnt/recursive-repairthemall/RepairThemAll/script/../repair_tools/arja.jar'
                 self.jar = os.path.join(REPAIR_TOOL_FOLDER, self.data["jar"])
 
     def init_bug(self, bug, bug_path):

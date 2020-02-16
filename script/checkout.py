@@ -13,6 +13,9 @@ parser.add_argument("--working_directory", "-w", required=True, help="The workin
 # /usr/bin/python /mnt/repairthemall/script/checkout.py  
 # --benchmark Bears --id webfirmframework-wff-453188520-453188718 --working_directory /mnt/workingDir
 if __name__ == "__main__":
+    '''
+    This is to checkout a benchmark bug 
+    '''
     # receive -b, -i, -w parameters
     args = parser.parse_args()
 

@@ -14,6 +14,7 @@ class Runner(object):
         self.args = args
         self.end_time = None
         if args.end_time is not None:
+            # end_time format: hours:minutes
             hours, minutes = args.end_time.split(':')
             now = datetime.datetime.now()
             self.end_time = now.replace(hour=int(hours), minute=int(minutes), second=0)

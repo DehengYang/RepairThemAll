@@ -15,4 +15,6 @@ def get_runner(tasks, args):
     """
     if is_grid5k():
         return Grid5kRunner(tasks, args)
+
+    # run locally
     return LocalRunner(tasks, args)

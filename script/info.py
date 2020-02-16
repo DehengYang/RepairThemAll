@@ -13,6 +13,9 @@ parser.add_argument("--benchmark", "-b", required=True, default="Defects4J",
 parser.add_argument("--id", "-i", help="The bug id")
 
 if __name__ == "__main__":
+    '''
+    This is to print basic information of a benchmark bug 
+    '''
     args = parser.parse_args()
     # get all bugs in the target benchmark
     args.benchmark = get_benchmark(args.benchmark)
